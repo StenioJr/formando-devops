@@ -1,4 +1,4 @@
-
+Este arquivo contém as respostas do desafio 1 do programa Formando DevOps para a vida real, de acordo com as orientações disponíveis no README.md no diretório ./desafio-linux/
 
 ## 1- Kernel e Boot Loader  
 
@@ -101,10 +101,10 @@ Depois, crio um arquivo `desafio.local.ext` com o conteúdo:
 ```
 
 Já para a criação do certificado do site:
-```
-_#crio a chave privada sem criptografia e o Certificate Signing Request (CSR).
-#No CSR insiro informações sobre o domínio, incluindo o CN www.desafio.local_
 
+crio a chave privada sem criptografia e o Certificate Signing Request (CSR).
+No CSR insiro informações sobre o domínio, incluindo o CN www.desafio.local
+```
 openssl req -newkey rsa:2048 -nodes -keyout desafio.local.key -out desafio.local.csr
 openssl x509 -signkey desafio.local.key -in desafio.local.csr -req -days 365 -out desafio.local.crt
 ```
@@ -115,38 +115,57 @@ openssl x509 -req -CA rootCA.crt -CAkey rootCA.key -in desafio.local.csr -out de
 ```
 ### 5.2 - Uso de certificados
 
+Copio o certificado assinado e a chave privada para os diretórios especificados no arquivo de configuração do nginx
+```
 cp ./desafio.local.crt /etc/pki/nginx/
 cp ./desafio.local.key /etc/pki/nginx/private/
+```
 
-vim /etc/nginx/nginx.conf
+Edito o arquivo `/etc/nginx/nginx.conf` para incluir as configurações do servidor usando TLS.
+```
+    server {
+        listen       443 ssl http2 default_server;
+        listen       [::]:443 ssl http2 default_server;
+        server_name  desafio.local.com;
+        root         /usr/share/nginx/html;
 
-nginx -t 
-systemctl restart nginx
+        ssl_certificate "/etc/pki/nginx/desafio.local.crt";
+        ssl_certificate_key "/etc/pki/nginx/private/desafio.local.key";
+        ssl_session_cache shared:SSL:1m;
+        ssl_session_timeout  10m;
+        ssl_ciphers PROFILE=SYSTEM;
+        ssl_prefer_server_ciphers on;
+       ...
+       }
+```
 
-vim /etc/hosts
-curl --cacert ~/rootCA.crt https://www.desafio.local
+Uso `nginx -t` para testar e garantir que o arquivo de configuração está correto. 
+Reinicio o serviço do nginx `systemctl restart nginx`
 
-
-________________________________________________________________________
-
+Adiciono o endereço do meu servidor web no /etc/hosts  `127.0.0.0   www.desafio.local`
+```
+[vagrant@centos8 ~]$ curl --cacert /etc/pki/rootCA.crt  https://www.desafio.local
+Duas palavrinhas pra você: para, béns!
+```
 ## 6 - Rede
 
 ### 6.1 - Firewall
 
-ping já está funcionando
+Ping já está funcionando. Pelo titulo "Firewall" acredito que a ideia seria ter alguma regra no iptables proibindo tráfego icmp. 
+
+`sudo iptables -S` Mostra as regras de firewall configuradas. `ìptables -D` poderia ser usado para excluir alguma regra que existisse bloqueando icmp.
+
 
 ### 6.2 - HTTP
 
-curl -D - https://httpbin.org/response-headers?hello=world
+`curl -D - https://httpbin.org/response-headers?hello=world`
 
-A opção -D trás os headers. Posso também ter mais informações incluindo o -v (verbose)
-
-______________________________________________________________________________
+A opção `-D` trás os headers. Posso também ter mais informações incluindo o `-v` (verbose)
 
 ## Logs
 
-No diretório /etc/logrotate.d/ criei o arquivo nginx com a seguinte configuração:
-
+No diretório `/etc/logrotate.d/` criei o arquivo nginx com a seguinte configuração:
+```
 /var/log/nginx/*.log {
     daily
     rotate 7
@@ -155,52 +174,55 @@ No diretório /etc/logrotate.d/ criei o arquivo nginx com a seguinte configuraç
     compress
     copytruncate
 }
-
+```
 Dessa forma terei os logs rotacionados diariamente, e mantendo 1 semana de log.
 
-Testando o logrotate com "logrotate -f /etc/logrotate.d/nginx" vejo que ja está fazendo o rotacionamento de logs. 
+Testando o logrotate com `logrotate -f /etc/logrotate.d/nginx` vejo que o rotacionamento de logs está configurado corretamente. 
 
-Para garantir que o logrotate seja executado diariamente, é importante incluir na configuração do crontab. Assim, crio o arquivo logrotate no /etc/cron.d/ para ser executado diariamente na hora desejada.
-
+Para garantir que o logrotate seja executado diariamente, é importante incluir na configuração do **crontab**. Assim, crio o arquivo _logrotate_ no `/etc/cron.d/` para ser executado diariamente na hora desejada.
+```
 0 3 * * * root /usr/sbin/logrotate /etc/logrotate.d/nginx
-
-O logrotate do nginx será executado sempre as 3 da manhã.
--------------------------------------------------------------------------------
+#O logrotate do nginx será executado sempre as 3 da manhã.
+```
 
 ## 7 - Filesystem
 
 ### 7.1 - Expandir Partição LVM
 
-Com pvdisplay e lvdisplay vejo que o disco /dev/sdb1 corresponte a partição montada como mount /dev/mapper/data_vg-data_lv
+Com `pvdisplay` e `lvdisplay` vejo que o disco `/dev/sdb1` corresponte a partição montada como `/dev/mapper/data_vg-data_lv`
 
-Desmonto o disco com "umount  /dev/mapper/data_vg-data_lv"
-Uso "cfdisk /dev/sdb" e faço o resize do /dev/sdb1 para 5 Gi
-Depois uso "pvresize /dev/sdb1" para expandir o volume físico para o novo tamanho
-"lvextend /dev/data_vg/data_lv -l+100%FREE" expande o volume lógico para o tamanho máximo disponível
-"resize2fs /dev/data_vg/data_lv"
-"mount /dev/data_vg/data_lv /data" monta novamente o sistema de arquivos
+Desmonto o disco com `umount  /dev/mapper/data_vg-data_lv`
+
+Uso `cfdisk /dev/sdb` e faço o resize do `/dev/sdb1` para `5 Gi`
+
+Depois uso `pvresize /dev/sdb1` para expandir o volume físico para o novo tamanho
+
+`lvextend /dev/data_vg/data_lv -l+100%FREE` expande o volume lógico para o tamanho máximo disponível
+
+`resize2fs /dev/data_vg/data_lv` expande o sistema de arquivos
+
+`mount /dev/data_vg/data_lv /data` monta novamente o sistema de arquivos
 
 ### 7.2 - Criar partição LVM 
 
-cfdisk /dev/sdb
-crio uma nova partição com o tamanho do disco de 5G e faço o write antes de sair
+`cfdisk /dev/sdb` crio uma nova partição com o tamanho do disco de 5G e faço o write antes de sair
 
-pvcreate /dev/sdb2 
-Crio o volume físico
+`pvcreate /dev/sdb2` Crio o volume físico
 
-vgcreate vg-sdb2 /dev/sdb2
+`vgcreate vg-sdb2 /dev/sdb2` crio o virtual group
 
-lvcreate -l 100%VG vg-sdb2 -n lv-sdb2
-mkfs.ext4 /dev/vg-sdb2/lv-sdb2
+`lvcreate -l 100%VG vg-sdb2 -n lv-sdb2` crio o volume lógico
+
+`mkfs.ext4 /dev/vg-sdb2/lv-sdb2` formato com sistemas de arquivo ext4
 
 ### 7.3 - Criar partição XFS 
 
-Necessário instalar o pacote xfsprogs, que contém o comando mkfs.xfs
-
+Necessário instalar o pacote `xfsprogs`, que contém o comando `mkfs.xfs`
+```
 yum update && yum upgrade -y
 yum install xfsprogs
-
-Depoís mkfs.xfs /dev/sdc para formatar com xfs
+```
+Depoís `mkfs.xfs /dev/sdc` para formatar com xfs o disco /dev/sdc inteiro
 
 
     
