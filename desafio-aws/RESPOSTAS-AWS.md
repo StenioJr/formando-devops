@@ -37,10 +37,15 @@ E escolho as opções para minha AMI personalizada.
 Depois disso, posso ir no menu lateral esquerdo em `Imagens > AMI` e lá estará a AMI, que eu posso selecionar e executar nova instância a partir dela. Obs: Para alta disponibilidade a nova instância foi criada na subnet da outra AZ, no caso us-east-1b.
 
 Após isso, vou em `Balanceamento de carga > Grupos de destino` e crio um target group incluindo as duas instâncias na VPC Formando DevOps. 
+
 ![](./Imagens-respostas/aws-target-group.png)
+
 Feito isso, posso ir em `Load Balancers` e criar meu Application Load Balancer (ALB), associado ao target group definido, e usando um novo security group específico liberando tráfego http.
+
 ![](./Imagens-respostas/aws-alb.png)
+
 Para diferenciar as duas instâncias, vou no `/var/www/html/index.html`e adiciono uma nova linha indicando que uma é o servidor na AZ1 e a outra é o clone na AZ2. Após acessar o DNS do meu ALB, terei os resultados: 
+
 ![](./Imagens-respostas/aws-alb1.png)
 ![](./Imagens-respostas/aws-alb2.png)
 
