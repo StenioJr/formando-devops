@@ -1,8 +1,8 @@
 Alo Mundo!
 
-Meu nome é Teste e estou participando do Desafio Terraform da Getup/LinuxTips.
+Meu nome é Stênio Negreiros e estou participando do Desafio Terraform da Getup/LinuxTips.
 
-Hoje é dia 06/10/2022,  e os números de 1 a 100 divisíveis por 19 são: 19, 38, 57, 76, 95
+Hoje é dia 06/10/2022,  e os números de 1 a 100 divisíveis por 12 são: 12, 24, 36, 48, 60, 72, 84, 96
 
 
 
