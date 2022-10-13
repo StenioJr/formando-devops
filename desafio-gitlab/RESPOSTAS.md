@@ -11,7 +11,7 @@ __________________________
 
 **5 -** Altero o texto do index.html usando o vim
 
-**### **6 -** Uso o comando `git checkout -b feature` para criar a nova branch, e após isso altero o texto.
+**6 -** Uso o comando `git checkout -b feature` para criar a nova branch, e após isso altero o texto.
 
 **7 -** Crio o arquivo `.gitlab-ci.yml` baseado no template de página html simples que está na documentação do gitlab. 
 
