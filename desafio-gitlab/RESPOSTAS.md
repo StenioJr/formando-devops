@@ -1,30 +1,19 @@
 __________________________
 ## Respostas
 
-### 2 - 
-
-Crio uma chave SSH com o comando`ssh-keygen` e depois configuro a chave pública no gitlab, indo no ícone do usuário, depois em `Preferences > SSH keys`. Após isso posso fazer o `git clone git@gitlab.com:formando-devops-stenio/desafio-gitlab.git` do repositório.
+**2 -** Crio uma chave SSH com o comando`ssh-keygen` e depois configuro a chave pública no gitlab, indo no ícone do usuário, depois em `Preferences > SSH keys`. Após isso posso fazer o `git clone git@gitlab.com:formando-devops-stenio/desafio-gitlab.git` do repositório.
 
 ![](./img/desafio-2.png)
 
-### 3 - 
+**3 -** Faço a cópia de todos os arquivos na pasta usando o comando `cp -r * ~/desafio-gitlab/`, adiciono os novos arquivos com `git add *` e faço o commit com `git commit`
 
-Faço a cópia de todos os arquivos na pasta usando o comando `cp -r * ~/desafio-gitlab/`, adiciono os novos arquivos com `git add *` e faço o commit com `git commit`
+**4 -** Uso o comando `git push origin main` para fazer o push dos arquivos adicionados no repositório local pelo commit.
 
-### 4 - 
+**5 -** Altero o texto do index.html usando o vim
 
-Uso o comando `git push origin main` para fazer o push dos arquivos adicionados no repositório local pelo commit.
+**### **6 -** Uso o comando `git checkout -b feature` para criar a nova branch, e após isso altero o texto.
 
-### 5 - 
-
-Altero o texto do index.html usando o vim
-
-### 6 - 
-Uso o comando `git checkout -b feature` para criar a nova branch, e após isso altero o texto.
-
-### 7 -
-
-Crio o arquivo `.gitlab-ci.yml` baseado no template de página html simples que está na documentação do gitlab. 
+**7 -** Crio o arquivo `.gitlab-ci.yml` baseado no template de página html simples que está na documentação do gitlab. 
 
 ```yml
 ## Usando template para página html simples
@@ -39,17 +28,12 @@ pages:
 ```
 Após subir fazer o commit e fazer o push com `git push origin feature`, o arquivo irá rodar o pipeline e disponibilizar a página html.
 
-### 8 - 
+**8 -** Alterno novamente para a branch main com `git checkout main` e depois faço o merge com `git merge feature` e para finalizar faço o push do main.
 
-Alterno novamente para a branch main com `git checkout main` e depois faço o merge com `git merge feature` e para finalizar faço o push do main.
-
-### 9 -
-
-Na GUI do gitlab, indo em `settings > pages` encontro a minha página.
+**9 -** Na GUI do gitlab, indo em `settings > pages` encontro a minha página.
 
 
-### 11 - 
-
+**11 -** 
 Link do repositório: https://gitlab.com/formando-devops-stenio/desafio-gitlab
 
 Log do git:
