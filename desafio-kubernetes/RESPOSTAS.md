@@ -144,7 +144,6 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: nginx
