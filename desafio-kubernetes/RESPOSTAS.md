@@ -124,80 +124,67 @@ referência: https://hub.docker.com/r/alpine/dfimage
 
 
 
-<!--  
+ 
 # Desafio Kubernetes
 
-As questões abaixo devem ser respondidas no arquivo [RESPOSTAS-kube.md](RESPOSTAS-kube.md) em um fork desse repositório. Por ordem e numeradamente. O formato é livre, mas recomenda-se as linhas de comando utilizadas para criar ou alterar resources de cada questão na maioria dos casos. Quanto mais sucinto e direto, melhor. Envie o endereço do seu repositório para desafio@getupcloud.com.
+**1 - com uma unica linha de comando capture somente linhas que contenham "erro" do log do pod `serverweb` no namespace `meusite` que tenha a label `app: ovo`.**
 
-Ex. de respostas:
-
-### 1 - linha de comando para criar um resource x
-
-```bash
-    kubectl cria um resource x
 ```
+kubectl logs -n meusite -l app=ovo | grep -i 'error'
+```
+__________________________
 
-ou
+**2 - crie o manifesto de um recurso que seja executado em todos os nós do cluster com a imagem `nginx:latest` com nome `meu-spread`, nao sobreponha ou remova qualquer taint de qualquer um dos nós.**
 
-### 2 - crie um resource y
-
-```yaml
-    apiVersion: xyz/v1
-    Kind: XYZ
+```
+apiVersion: apps/v1
+kind: DaemonSet   
+metadata:
+  name: meu-spread
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
     metadata:
-      name: y
-      namespace: x
+      labels:
+        app: nginx
     spec:
-    ....
+      containers:
+      - name: meu-spread
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+      tolerations:
+      - key:
+        operator: "Exists"
+```
+```
+root@STENIO-PC:~# kubectl create -f questao2.yaml 
+daemonset.apps/meu-spread created
+root@STENIO-PC:~# kubectl get pods -o wide 
+NAME               READY   STATUS    RESTARTS   AGE   IP            NODE                   NOMINATED NODE   READINESS GATES
+meu-spread-97hmh   1/1     Running   0          30s   10.244.0.13   meuk8s-control-plane   <none>           <none>
+meu-spread-txsgv   1/1     Running   0          30s   10.244.1.20   meuk8s-worker          <none>           <none>
 ```
 
----
----
+Para garantir que cada nó irá rodar uma cópia do pod uso o DaemonSet. Além disso, para ignorar o efeito de taints é usando `tolerations`. Um `key` vazia com o `operator: "Exists"` corresponde a todas as chaves, valores e efeitos, o que significa que ignorará qualquer taint.
+<!-- https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+There are two special cases:
 
-## Caso precise de um kubernetes, segue uma dica rápida para a criação de um cluster kubernetes kind, no seu linux ou mac, ja com docker instalado.
+An empty key with operator Exists matches all keys, values and effects which means this will tolerate everything.An empty effect matches all effects with key key1. -->
+__________________________
 
-1 - tenha certeza que ja tenha docker instalado na sua maquina
+**3 - crie um deploy `meu-webserver` com a imagem `nginx:latest` e um initContainer com a imagem `alpine`. O initContainer deve criar um arquivo /app/index.html, tenha o conteudo "HelloGetup" e compartilhe com o container de nginx que só poderá ser inicializado se o arquivo foi criado.**
 
-2 - baixe e instale o kind 
 
-```bash
-# Linux
-sudo curl -Lo /usr/local/bin/kind https://github.com/kubernetes-sigs/kind/releases/download/v0.16.0/kind-linux-amd64
-sudo chmod +x /usr/local/bin/kind
-# MacOS
-sudo curl -Lo /usr/local/bin/kind  https://github.com/kubernetes-sigs/kind/releases/download/v0.16.0/kind-darwin-arm64
-sudo chmod +x /usr/local/bin/kind
-```
 
-3 - salve e use esse arquivo abaixo para subir seu cluster, ele é um exemplo de como o kind é poderoso e pode te ajudar a subir um kubernetes rapido e facil
 
-```bash
-cat << EOF | kind create cluster --name meuk8s --config -
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-- role: worker
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 80
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 443
-    protocol: TCP
-EOF
-```
 
----
----
-
-## Bora começar !!!
-
-1 - com uma unica linha de comando capture somente linhas que contenham "erro" do log do pod `serverweb` no namespace `meusite` que tenha a label `app: ovo`.
-
-2 - crie o manifesto de um recurso que seja executado em todos os nós do cluster com a imagem `nginx:latest` com nome `meu-spread`, nao sobreponha ou remova qualquer taint de qualquer um dos nós.
-
-3 - crie um deploy `meu-webserver` com a imagem `nginx:latest` e um initContainer com a imagem `alpine`. O initContainer deve criar um arquivo /app/index.html, tenha o conteudo "HelloGetup" e compartilhe com o container de nginx que só poderá ser inicializado se o arquivo foi criado.
+__________________________
 
 4 - crie um deploy chamado `meuweb` com a imagem `nginx:1.16` que seja executado exclusivamente no node master.
 
