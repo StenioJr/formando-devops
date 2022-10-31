@@ -179,15 +179,102 @@ __________________________
 
 **3 - crie um deploy `meu-webserver` com a imagem `nginx:latest` e um initContainer com a imagem `alpine`. O initContainer deve criar um arquivo /app/index.html, tenha o conteudo "HelloGetup" e compartilhe com o container de nginx que só poderá ser inicializado se o arquivo foi criado.**
 
-
-
-
-
+```
+apiVersion: apps/v1  
+kind: Deployment     
+metadata:
+  name: meu-webserver
+  labels:
+    app: nginx       
+spec:
+  replicas: 1        
+  selector:
+    matchLabels:     
+      app: nginx     
+  template:
+    metadata:        
+      labels:        
+        app: nginx
+    spec:
+      containers:
+      - name: meu-webserver
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: volume-nginx
+          mountPath: /usr/share/nginx/html
+      initContainers:
+      - name: init
+        image: alpine
+        command: ["sh", "-c", "echo HelloGetup > /app/index.html"]
+        volumeMounts:
+        - name: volume-nginx
+          mountPath: "/app"
+      volumes:
+      - name: volume-nginx
+        emptyDir: {}
+```
+Para que seja possível a utilização do arquivo criado pelo InitContainer, é necessário o uso de um volume e montá-lo em ambos os containers.
 __________________________
 
-4 - crie um deploy chamado `meuweb` com a imagem `nginx:1.16` que seja executado exclusivamente no node master.
+**4 - crie um deploy chamado `meuweb` com a imagem `nginx:1.16` que seja executado exclusivamente no node master.**
 
-5 - com uma unica linha de comando altere a imagem desse pod `meuweb` para `nginx:1.19` e salve o comando aqui no repositorio.
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meuweb
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.16
+        ports:
+        - containerPort: 80
+      nodeSelector:
+        kubernetes.io/hostname: meuk8s-control-plane
+      tolerations:
+      - key:
+        operator: "Exists"   
+```
+Para fazer o que foi pedido na questão usei o node selector com o label do meu node control plane `kubernetes.io/hostname: meuk8s-control-plane` e usei o tolerations para que o taint seja ignorado.
+
+```
+root@STENIO-PC:~# kubectl create -f questao4.yml
+deployment.apps/meuweb created
+root@STENIO-PC:~# kubectl get pods -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP            NODE                   NOMINATED NODE   READINESS GATES
+meuweb-6966b968cd-g2fpf   1/1     Running   0          43s   10.244.0.17   meuk8s-control-plane   <none>           <none>
+root@STENIO-PC:~# kubectl scale --replicas=5 deployment meuweb
+deployment.apps/meuweb scaled
+root@STENIO-PC:~# kubectl get pods -o wide
+NAME                      READY   STATUS    RESTARTS   AGE    IP            NODE                   NOMINATED NODE   READINESS GATES
+meuweb-6966b968cd-2jrnc   1/1     Running   0          58s    10.244.0.20   meuk8s-control-plane   <none>           <none>
+meuweb-6966b968cd-dl56c   1/1     Running   0          58s    10.244.0.19   meuk8s-control-plane   <none>           <none>
+meuweb-6966b968cd-g2fpf   1/1     Running   0          113s   10.244.0.17   meuk8s-control-plane   <none>           <none>
+meuweb-6966b968cd-jp68l   1/1     Running   0          58s    10.244.0.21   meuk8s-control-plane   <none>           <none>
+meuweb-6966b968cd-sc6kp   1/1     Running   0          58s    10.244.0.18   meuk8s-control-plane   <none>           <none>
+```
+
+
+____________________________
+**5 - com uma unica linha de comando altere a imagem desse pod `meuweb` para `nginx:1.19` e salve o comando aqui no repositorio.**
+```
+kubectl set image deploy meuweb nginx=nginx:1.19
+```
+___________________________
+
 
 6 - quais linhas de comando para instalar o ingress-nginx controller usando helm, com os seguintes parametros;
 
@@ -204,18 +291,39 @@ __________________________
 
 7 - quais as linhas de comando para: 
 
-    criar um deploy chamado `pombo` com a imagem de `nginx:1.11.9-alpine` com 4 réplicas;
-    alterar a imagem para `nginx:1.16` e registre na annotation automaticamente;
-    alterar a imagem para 1.19 e registre novamente; 
-    imprimir a historia de alterações desse deploy;
-    voltar para versão 1.11.9-alpine baseado no historico que voce registrou.
-    criar um ingress chamado `web` para esse deploy
+- criar um deploy chamado `pombo` com a imagem de `nginx:1.11.9-alpine` com 4 réplicas;
 
+`kubectl create deployment pombo --image=nginx:1.11.9-alpine --replicas=4`
+
+- alterar a imagem para `nginx:1.16` e registre na annotation automaticamente;
+
+`kubectl set image deployment pombo nginx=nginx:1.16 --record` 
+
+- alterar a imagem para 1.19 e registre novamente; 
+
+`kubectl set image deployment pombo nginx=nginx:1.19 --record`
+
+- imprimir a historia de alterações desse deploy;
+
+`kubectl rollout history deployment pombo`
+
+  - voltar para versão 1.11.9-alpine baseado no historico que voce registrou.
+
+`kubectl rollout undo deployment pombo --to-revision=1`
+
+- criar um ingress chamado `web` para esse deploy
+
+`kubectl create ingress web --class=default --rule="pombo.com/*=pombo:80"` 
 
 8 - linhas de comando para; 
 
-    criar um deploy chamado `guardaroupa` com a imagem `redis`;
-    criar um serviço do tipo ClusterIP desse redis com as devidas portas.
+- criar um deploy chamado `guardaroupa` com a imagem `redis`;
+
+`kubectl create deployment guardaroupa --image=redis` 
+
+- criar um serviço do tipo ClusterIP desse redis com as devidas portas.
+
+`kubectl expose deployment guardaroupa --type=ClusterIP --port=6379` 
 
 9 - crie um recurso para aplicação stateful com os seguintes parametros:
 
@@ -231,6 +339,8 @@ __________________________
 10 - crie um recurso com 2 replicas, chamado `balaclava` com a imagem `redis`, usando as labels nos pods, replicaset e deployment, `backend=balaclava` e `minhachave=semvalor` no namespace `backend`.
 
 11 - linha de comando para listar todos os serviços do cluster do tipo `LoadBalancer` mostrando tambem `selectors`.
+
+`kubectl get service -o wide | grep LoadBalancer` 
 
 12 - com uma linha de comando, crie uma secret chamada `meusegredo` no namespace `segredosdesucesso` com os dados, `segredo=azul` e com o conteudo do texto abaixo.
 
@@ -261,14 +371,25 @@ __________________________
 18 - crie um deploy `redis` usando a imagem com o mesmo nome, no namespace `cachehits` e que tenha o ponto de montagem `/data/redis` de um volume chamado `app-cache` que NÂO deverá ser persistente.
 
 19 - com uma linha de comando escale um deploy chamado `basico` no namespace `azul` para 10 replicas.
+```
+kubectl scale --replicas=10 -n azul deployment basico
+```
 
 20 - com uma linha de comando, crie um autoscale de cpu com 90% de no minimo 2 e maximo de 5 pods para o deploy `site` no namespace `frontend`.
-
+```
+kubectl autoscale -n frontend deploy site --cpu-percent=90 --min=2 --max=5
+```
 21 - com uma linha de comando, descubra o conteudo da secret `piadas` no namespace `meussegredos` com a entrada `segredos`.
 
 22 - marque o node o nó `k8s-worker1` do cluster para que nao aceite nenhum novo pod.
+```
+kubectl taint nodes k8s-worker1 key1=value1:NoSchedule
+```
 
 23 - esvazie totalmente e de uma unica vez esse mesmo nó com uma linha de comando.
+```
+kubectl drain k8s-worker1
+```
 
 24 - qual a maneira de garantir a criaçao de um pod ( sem usar o kubectl ou api do k8s ) em um nó especifico.
 
@@ -277,4 +398,6 @@ __________________________
 26 - criar a key e certificado cliente para uma usuaria chamada `jane` e que tenha permissao somente de listar pods no namespace `frontend`. liste os comandos utilizados.
 
 27 - qual o `kubectl get` que traz o status do scheduler, controller-manager e etcd ao mesmo tempo
--->
+```
+kubectl get componentstatuses
+```
