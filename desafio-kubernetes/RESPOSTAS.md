@@ -276,7 +276,7 @@ kubectl set image deploy meuweb nginx=nginx:1.19
 ___________________________
 
 
-6 - quais linhas de comando para instalar o ingress-nginx controller usando helm, com os seguintes parametros;
+**6 - quais linhas de comando para instalar o ingress-nginx controller usando helm, com os seguintes parametros;**
 
     helm repository : https://kubernetes.github.io/ingress-nginx
 
@@ -288,8 +288,8 @@ ___________________________
         type: NodePort
       updateStrategy:
         type: Recreate
-
-7 - quais as linhas de comando para: 
+____________
+**7 - quais as linhas de comando para:**
 
 - criar um deploy chamado `pombo` com a imagem de `nginx:1.11.9-alpine` com 4 réplicas;
 
@@ -316,7 +316,7 @@ ___________________________
 `kubectl create ingress web --class=default --rule="pombo.com/*=pombo:80"` 
 ___________________________
 
-8 - linhas de comando para; 
+**8 - linhas de comando para;** 
 
 - criar um deploy chamado `guardaroupa` com a imagem `redis`;
 
@@ -327,7 +327,7 @@ ___________________________
 `kubectl expose deployment guardaroupa --type=ClusterIP --port=6379` 
 ___________________________
 
-9 - crie um recurso para aplicação stateful com os seguintes parametros:
+**9 - crie um recurso para aplicação stateful com os seguintes parametros:**
 
     - nome : meusiteset
     - imagem nginx 
@@ -370,8 +370,8 @@ spec:
         requests:
           storage: 1Gi
 ```
-
-10 - crie um recurso com 2 replicas, chamado `balaclava` com a imagem `redis`, usando as labels nos pods, replicaset e deployment, `backend=balaclava` e `minhachave=semvalor` no namespace `backend`.
+____________
+**10 - crie um recurso com 2 replicas, chamado `balaclava` com a imagem `redis`, usando as labels nos pods, replicaset e deployment, `backend=balaclava` e `minhachave=semvalor` no namespace `backend`.**
 
 
 ```yaml
@@ -403,12 +403,12 @@ spec:
 
 
 ___________________________
-11 - linha de comando para listar todos os serviços do cluster do tipo `LoadBalancer` mostrando tambem `selectors`.
+**11 - linha de comando para listar todos os serviços do cluster do tipo `LoadBalancer` mostrando tambem `selectors`.**
 
 `kubectl get service -o wide | grep LoadBalancer` 
 ___________________________
 
-12 - com uma linha de comando, crie uma secret chamada `meusegredo` no namespace `segredosdesucesso` com os dados, `segredo=azul` e com o conteudo do texto abaixo.
+**12 - com uma linha de comando, crie uma secret chamada `meusegredo` no namespace `segredosdesucesso` com os dados, `segredo=azul` e com o conteudo do texto abaixo.**
 
 ```bash
    # cat chave-secreta
@@ -421,13 +421,13 @@ ___________________________
 ```
 kubectl create secret generic -n segredosdesucesso meusegredo --from-literal=segredo=azul --from-file=chave-secreta
 ```
-
-13 - qual a linha de comando para criar um configmap chamado `configsite` no namespace `site`. Deve conter uma entrada `index.html` que contenha seu nome.
+____________
+**13 - qual a linha de comando para criar um configmap chamado `configsite` no namespace `site`. Deve conter uma entrada `index.html` que contenha seu nome.**
 ```
 kubectl create configmap -n site configsite --from-literal=index.html=Stenio
 ```
-
-14 - crie um recurso chamado `meudeploy`, com a imagem `nginx:latest`, que utilize a secret criada no exercicio 11 como arquivos no diretorio `/app`.
+____________
+**14 - crie um recurso chamado `meudeploy`, com a imagem `nginx:latest`, que utilize a secret criada no exercicio 11 como arquivos no diretorio `/app`.**
 
 ```yaml
 apiVersion: apps/v1
@@ -458,10 +458,10 @@ spec:
         secret:
           secretName: meusegredo
 ```
+____________
+**15 - crie um recurso chamado `depconfigs`, com a imagem `nginx:latest`, que utilize o configMap criado no exercicio 12 e use seu index.html como pagina principal desse recurso.**
 
-15 - crie um recurso chamado `depconfigs`, com a imagem `nginx:latest`, que utilize o configMap criado no exercicio 12 e use seu index.html como pagina principal desse recurso.
-
-```
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -489,8 +489,8 @@ spec:
         configMap:
           name: configsite
 ```
-
-16 - crie um novo recurso chamado `meudeploy-2` com a imagem `nginx:1.16` , com a label `chaves=secretas` e que use todo conteudo da secret como variavel de ambiente criada no exercicio 11.
+____________
+**16 - crie um novo recurso chamado `meudeploy-2` com a imagem `nginx:1.16` , com a label `chaves=secretas` e que use todo conteudo da secret como variavel de ambiente criada no exercicio 11.**
 
 ```yaml
 apiVersion: apps/v1
@@ -518,8 +518,8 @@ spec:
         - secretRef:
             name: meusegredo
 ```
-
-17 - linhas de comando que;
+____________
+**17 - linhas de comando que;**
 
 - crie um namespace `cabeludo`;
 
@@ -535,9 +535,13 @@ spec:
 
 - exponha variaveis de ambiente chamados USUARIO para username e SENHA para a password.
 
+```
+export USUARIO=$(kubectl get secret acesso -o jsonpath="{.data.username}" | base64 --decode)
 
-
-18 - crie um deploy `redis` usando a imagem com o mesmo nome, no namespace `cachehits` e que tenha o ponto de montagem `/data/redis` de um volume chamado `app-cache` que NÂO deverá ser persistente.
+export SENHA=$(kubectl get secret acesso -o jsonpath="{.data.password}" | base64 --decode)
+```
+____________
+**18 - crie um deploy `redis` usando a imagem com o mesmo nome, no namespace `cachehits` e que tenha o ponto de montagem `/data/redis` de um volume chamado `app-cache` que NÂO deverá ser persistente.**
 
 ```yaml
 apiVersion: apps/v1   
@@ -569,25 +573,28 @@ spec:
       - name: app-cache
         emptyDir: {}
 ```
+____________
 
-
-19 - com uma linha de comando escale um deploy chamado `basico` no namespace `azul` para 10 replicas.
+**19 - com uma linha de comando escale um deploy chamado `basico` no namespace `azul` para 10 replicas.**
 ```
 kubectl scale --replicas=10 -n azul deployment basico
 ```
-
-20 - com uma linha de comando, crie um autoscale de cpu com 90% de no minimo 2 e maximo de 5 pods para o deploy `site` no namespace `frontend`.
+____________
+**20 - com uma linha de comando, crie um autoscale de cpu com 90% de no minimo 2 e maximo de 5 pods para o deploy `site` no namespace `frontend`.**
 ```
 kubectl autoscale -n frontend deploy site --cpu-percent=90 --min=2 --max=5
 ```
-21 - com uma linha de comando, descubra o conteudo da secret `piadas` no namespace `meussegredos` com a entrada `segredos`.
+____________
+**21 - com uma linha de comando, descubra o conteudo da secret `piadas` no namespace `meussegredos` com a entrada `segredos`.**
 
-22 - marque o node o nó `k8s-worker1` do cluster para que nao aceite nenhum novo pod.
+`kubectl get secret -n meussegredos piadas -o jsonpath="{.data.segredos}" | base64 --decode`
+____________
+**22 - marque o node o nó `k8s-worker1` do cluster para que nao aceite nenhum novo pod.**
 ```
 kubectl taint nodes k8s-worker1 key1=value1:NoSchedule
 ```
-
-23 - esvazie totalmente e de uma unica vez esse mesmo nó com uma linha de comando.
+____________
+**23 - esvazie totalmente e de uma unica vez esse mesmo nó com uma linha de comando.**
 ```
 kubectl drain k8s-worker1
 ```
@@ -601,10 +608,10 @@ ____________
 25 - criar uma serviceaccount `userx` no namespace `developer`. essa serviceaccount só pode ter permissao total sobre pods (inclusive logs) e deployments no namespace `developer`. descreva o processo para validar o acesso ao namespace do jeito que achar melhor.
 
 26 - criar a key e certificado cliente para uma usuaria chamada `jane` e que tenha permissao somente de listar pods no namespace `frontend`. liste os comandos utilizados.
-
-27 - qual o `kubectl get` que traz o status do scheduler, controller-manager e etcd ao mesmo tempo
+____________
+**27 - qual o `kubectl get` que traz o status do scheduler, controller-manager e etcd ao mesmo tempo**
 ```
 kubectl get componentstatuses
 ```
 
- <!-- Falta responder:  17(ultimo item), 21, 25, 26 -->
+ <!-- Falta responder: 25, 26 -->
