@@ -136,7 +136,7 @@ __________________________
 
 **2 - crie o manifesto de um recurso que seja executado em todos os nós do cluster com a imagem `nginx:latest` com nome `meu-spread`, nao sobreponha ou remova qualquer taint de qualquer um dos nós.**
 
-```
+```yaml
 apiVersion: apps/v1
 kind: DaemonSet   
 metadata:
@@ -179,7 +179,7 @@ __________________________
 
 **3 - crie um deploy `meu-webserver` com a imagem `nginx:latest` e um initContainer com a imagem `alpine`. O initContainer deve criar um arquivo /app/index.html, tenha o conteudo "HelloGetup" e compartilhe com o container de nginx que só poderá ser inicializado se o arquivo foi criado.**
 
-```
+```yaml
 apiVersion: apps/v1  
 kind: Deployment     
 metadata:
@@ -220,7 +220,7 @@ __________________________
 
 **4 - crie um deploy chamado `meuweb` com a imagem `nginx:1.16` que seja executado exclusivamente no node master.**
 
-```
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -314,6 +314,7 @@ ___________________________
 - criar um ingress chamado `web` para esse deploy
 
 `kubectl create ingress web --class=default --rule="pombo.com/*=pombo:80"` 
+___________________________
 
 8 - linhas de comando para; 
 
@@ -324,6 +325,7 @@ ___________________________
 - criar um serviço do tipo ClusterIP desse redis com as devidas portas.
 
 `kubectl expose deployment guardaroupa --type=ClusterIP --port=6379` 
+___________________________
 
 9 - crie um recurso para aplicação stateful com os seguintes parametros:
 
@@ -335,12 +337,76 @@ ___________________________
     - montado em /data
     - sufixo dos pvc: data
 
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: meusiteset
+  namespace: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: volume-nginx
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: volume-nginx
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 1Gi
+```
 
 10 - crie um recurso com 2 replicas, chamado `balaclava` com a imagem `redis`, usando as labels nos pods, replicaset e deployment, `backend=balaclava` e `minhachave=semvalor` no namespace `backend`.
 
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: balaclava
+  namespace: balaclava
+  labels:
+    backend: balaclava
+    minhachave: semvalor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      backend: balaclava
+  template:
+    metadata:
+      labels:
+        backend: balaclava
+        minhachave: semvalor
+    spec:
+      containers:
+      - name: balaclava
+        image: redis
+        ports:
+        - containerPort: 6379 
+```
+
+
+___________________________
 11 - linha de comando para listar todos os serviços do cluster do tipo `LoadBalancer` mostrando tambem `selectors`.
 
 `kubectl get service -o wide | grep LoadBalancer` 
+___________________________
 
 12 - com uma linha de comando, crie uma secret chamada `meusegredo` no namespace `segredosdesucesso` com os dados, `segredo=azul` e com o conteudo do texto abaixo.
 
@@ -352,23 +418,158 @@ ___________________________
      b21wb25lbnQ9Y29udHJvbGxlcixhcHAua3ViZXJuZXRlcy5pby9pbnN0YW5jZT1pbmdyZXNzLW5n
      aW54LGFwcC5rdWJlcm5ldGVzLmlvL25hbWU9aW5ncmVzcy1uZ
 ```
+```
+kubectl create secret generic -n segredosdesucesso meusegredo --from-literal=segredo=azul --from-file=chave-secreta
+```
 
 13 - qual a linha de comando para criar um configmap chamado `configsite` no namespace `site`. Deve conter uma entrada `index.html` que contenha seu nome.
+```
+kubectl create configmap -n site configsite --from-literal=index.html=Stenio
+```
 
 14 - crie um recurso chamado `meudeploy`, com a imagem `nginx:latest`, que utilize a secret criada no exercicio 11 como arquivos no diretorio `/app`.
 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: meudeploy
+  name: meudeploy
+spec:
+  selector:
+    matchLabels:
+      app: meudeploy
+  template:
+    metadata:
+      labels:
+        app: meudeploy
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: secret
+          mountPath: "/app"
+      volumes:
+      - name: secret
+        secret:
+          secretName: meusegredo
+```
+
 15 - crie um recurso chamado `depconfigs`, com a imagem `nginx:latest`, que utilize o configMap criado no exercicio 12 e use seu index.html como pagina principal desse recurso.
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: depconfigs
+  name: depconfigs
+  namespace: site
+spec:
+  selector:
+    matchLabels:
+      app: depconfigs
+  template:
+    metadata:
+      labels:
+        app: depconfigs
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        volumeMounts:
+        - name: meu-configmap
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: meu-configmap
+        configMap:
+          name: configsite
+```
 
 16 - crie um novo recurso chamado `meudeploy-2` com a imagem `nginx:1.16` , com a label `chaves=secretas` e que use todo conteudo da secret como variavel de ambiente criada no exercicio 11.
 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    chaves: secretas
+  name: meudeploy-2
+  namespace: segredosdesucesso
+spec:
+  selector:
+    matchLabels:
+      chaves: secretas
+  template:
+    metadata:
+      labels:
+        chaves: secretas
+    spec:
+      containers:
+      - image: nginx:1.16
+        name: nginx
+        ports:
+        - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: meusegredo
+```
+
 17 - linhas de comando que;
 
-    crie um namespace `cabeludo`;
-    um deploy chamado `cabelo` usando a imagem `nginx:latest`; 
-    uma secret chamada `acesso` com as entradas `username: pavao` e `password: asabranca`;
-    exponha variaveis de ambiente chamados USUARIO para username e SENHA para a password.
+- crie um namespace `cabeludo`;
+
+`kubectl create namespace cabeludo`
+
+- um deploy chamado `cabelo` usando a imagem `nginx:latest`; 
+
+`kubectl create deployment -n cabeludo cabelo --image=nginx:latest`
+
+- uma secret chamada `acesso` com as entradas `username: pavao` e `password: asabranca`;
+
+`kubectl create secret generic -n cabeludo  --from-literal=username=pavao --from-literal=password=asabranca`
+
+- exponha variaveis de ambiente chamados USUARIO para username e SENHA para a password.
+
+
 
 18 - crie um deploy `redis` usando a imagem com o mesmo nome, no namespace `cachehits` e que tenha o ponto de montagem `/data/redis` de um volume chamado `app-cache` que NÂO deverá ser persistente.
+
+```yaml
+apiVersion: apps/v1   
+kind: Deployment      
+metadata:
+  labels:
+    app: redis        
+  name: redis
+  namespace: cachehits
+spec:
+  replicas: 1
+  selector:
+    matchLabels:      
+      app: redis      
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - image: redis
+        name: redis
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - mountPath: /data/redis
+          name: app-cache
+      volumes:
+      - name: app-cache
+        emptyDir: {}
+```
+
 
 19 - com uma linha de comando escale um deploy chamado `basico` no namespace `azul` para 10 replicas.
 ```
@@ -390,9 +591,13 @@ kubectl taint nodes k8s-worker1 key1=value1:NoSchedule
 ```
 kubectl drain k8s-worker1
 ```
+_______
 
-24 - qual a maneira de garantir a criaçao de um pod ( sem usar o kubectl ou api do k8s ) em um nó especifico.
+**24 - qual a maneira de garantir a criaçao de um pod ( sem usar o kubectl ou api do k8s ) em um nó especifico.**
 
+Posso criar um pod estático, criando um manifesto diretamente no diretório `/etc/kubernetes/manifests`.  Os pods estáticos são gerenciados diretamente pelo  kubelet em um nó específico, sem que o servidor de API os observe. O kubelet observa cada Pod estático (e o reinicia se falhar).
+
+____________
 25 - criar uma serviceaccount `userx` no namespace `developer`. essa serviceaccount só pode ter permissao total sobre pods (inclusive logs) e deployments no namespace `developer`. descreva o processo para validar o acesso ao namespace do jeito que achar melhor.
 
 26 - criar a key e certificado cliente para uma usuaria chamada `jane` e que tenha permissao somente de listar pods no namespace `frontend`. liste os comandos utilizados.
@@ -401,3 +606,5 @@ kubectl drain k8s-worker1
 ```
 kubectl get componentstatuses
 ```
+
+ <!-- Falta responder:  17(ultimo item), 21, 25, 26 -->
