@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: podinfo
+  name: podinfo
+  namespace: default
+spec:
+  clusterIPs:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 31900
+    port: 9898
+    protocol: TCP
+    targetPort: 9898
+  selector:
+    app: podinfo
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

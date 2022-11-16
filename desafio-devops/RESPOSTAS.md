@@ -48,7 +48,7 @@ resource "kind_cluster" "default" {
 
 ![](./imagens/terraform-apply.png)
 
-Também usei o terraform para criar o repositório do desafio, usando o meu arquivo `repo.tf`:
+Também usei o terraform para criar o repositório no gitlab, usando o meu arquivo `repo.tf`:
 
 ```
 terraform {
@@ -154,7 +154,7 @@ Na etapa de lint, com o Dockerfile original do podinfo, o pipeline quebrava devi
 ![](./imagens/pipeline-erro-lint.png)
 ![](./imagens/lint.png)
 
-Após colocar a versão dos pacotes conforme sugerido pelo hadolint, o warning não aparece mais e o lint retorna exit code 0, seguindo a pipeline.
+Após incluir a versão dos pacotes no Dockerfile, conforme sugerido pelo hadolint, o warning não aparece mais e o lint retorna exit code 0, assim seguindo a pipeline.
 
 - **Build**:
 
@@ -162,9 +162,9 @@ Após colocar a versão dos pacotes conforme sugerido pelo hadolint, o warning n
 
 - **Scan**:
 
-Scan usando uma imagem alpine e instalando o trivy
+Scan usando uma imagem alpine e instalando o trivy com 0 de severidade crítica.
 
-[](./imagens/trivy.png)
+![](./imagens/trivy.png)
 
 - **Deploy**:
 
@@ -250,7 +250,7 @@ spec:
   sessionAffinity: None
   type: NodePort
 ```
-Expondo pelo service NodePort porta 31900 para teste
+Expondo pelo service NodePort na porta 31900 para teste
 
 ![](./imagens/aplicacao-podinfo.png)
 

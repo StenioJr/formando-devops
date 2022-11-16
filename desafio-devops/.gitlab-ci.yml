@@ -1,0 +1,60 @@
+stages:
+  - test
+  - build
+  - scan
+  - deploy
+
+lint:
+  image: hadolint/hadolint:latest-debian
+  stage: test
+  script:
+    - hadolint Dockerfile --failure-threshold=warning
+  rules:
+    - if:
+      exists: 
+      - Dockerfile
+
+docker-build:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY 
+    - GITLAB_USER_LOGIN=$GITLAB_USER_LOGIN| tr '[:upper:]' '[:lower:]'
+    - TAG_IMAGEM="$CI_REGISTRY/$GITLAB_USER_LOGIN/podinfo:$CI_COMMIT_SHORT_SHA"
+  script:
+    - echo $TAG_IMAGEM
+    - docker build --pull -t "$TAG_IMAGEM" .
+    - docker push "$TAG_IMAGEM"
+  rules:
+    - if:
+      exists:
+        - Dockerfile
+
+trivy:
+  image: alpine
+  stage: scan
+  before_script:
+    - IMAGEM="$CI_REGISTRY/$GITLAB_USER_LOGIN/podinfo:$CI_COMMIT_SHORT_SHA"
+    - echo $IMAGEM
+    - apk add curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+  script:
+    - trivy image --no-progress --exit-code 1 --severity CRITICAL $IMAGEM
+
+
+deploy:
+  image: 
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  variables:
+    TAG: $CI_COMMIT_SHORT_SHA
+  stage: deploy
+  script:
+    - kubectl config get-contexts
+    - kubectl config use-context steniojr/podinfo:agente-kube
+    - echo $TAG
+    - sed -i "s/<TAG>/$TAG/g" deploy-podinfo.yml
+    - kubectl create -f deploy-podinfo.yml
+    - kubectl create -f svc-podinfo.yml
