@@ -2,6 +2,8 @@
 
 Este arquivo contém as respostas e evidências dos principais pontos que fiz no desafio.
 
+Coloquei aqui no github os principais arquivos que criei (.tf e .yml), mas todos os usados no pipeline do podinfo estão no repositório do gitlab https://gitlab.com/steniojr/podinfo/.
+
 ## 2 - Terraform
 
 Começando pelo terraform, fiz a criação do cluster kind usando o arquivo `main.tf` criado:
